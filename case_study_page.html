@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Republic.com replaced manual DORA reporting with Copla Registry</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; background: #fff; line-height: 1.6; }
+
+  /* Nav mock */
+  nav { border-bottom: 1px solid #eee; padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-weight: 600; font-size: 18px; letter-spacing: -0.3px; color: #1a1a1a; display: flex; align-items: center; gap: 6px; }
+  .nav-logo svg { width: 22px; height: 22px; }
+  .nav-links { display: flex; gap: 1.5rem; font-size: 14px; color: #555; }
+  .nav-cta { background: #1a1a1a; color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none; }
+
+  /* Breadcrumb */
+  .breadcrumb { padding: 1rem 2rem; font-size: 13px; color: #888; border-bottom: 1px solid #f0f0f0; }
+  .breadcrumb a { color: #888; text-decoration: none; }
+  .breadcrumb a:hover { color: #1a1a1a; }
+  .breadcrumb span { margin: 0 6px; }
+
+  /* Hero */
+  .hero { max-width: 800px; margin: 0 auto; padding: 4rem 2rem 2.5rem; }
+  .hero-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #6c3fcf; background: #f3eeff; padding: 4px 12px; border-radius: 99px; margin-bottom: 1.25rem; letter-spacing: 0.02em; }
+  .hero h1 { font-size: clamp(24px, 4vw, 36px); font-weight: 600; line-height: 1.25; letter-spacing: -0.5px; color: #0f0f0f; margin-bottom: 1.25rem; }
+  .hero-meta { display: flex; align-items: center; gap: 1.5rem; font-size: 13px; color: #888; }
+  .hero-meta-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 4px; height: 4px; border-radius: 50%; background: #ccc; }
+
+  /* Pull quote */
+  .pull-quote-section { background: #f8f7ff; border-top: 1px solid #ece8ff; border-bottom: 1px solid #ece8ff; padding: 2.5rem 2rem; margin: 2rem 0; }
+  .pull-quote-inner { max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 3px 1fr; gap: 1.5rem; align-items: start; }
+  .pull-bar { background: #6c3fcf; border-radius: 2px; height: 100%; min-height: 60px; }
+  .pull-text { font-size: clamp(17px, 2.5vw, 21px); line-height: 1.55; font-weight: 400; color: #1a1a1a; font-style: italic; }
+  .pull-attr { margin-top: 12px; font-size: 13px; color: #888; font-style: normal; }
+
+  /* Main content */
+  .content { max-width: 800px; margin: 0 auto; padding: 0 2rem 4rem; display: grid; grid-template-columns: 1fr 240px; gap: 3rem; align-items: start; }
+
+  /* Sections */
+  .main-col section { margin-bottom: 2.5rem; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #aaa; margin-bottom: 10px; }
+  .main-col h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; color: #0f0f0f; margin-bottom: 10px; }
+  .main-col p { font-size: 15px; line-height: 1.7; color: #333; }
+  .divider { border: none; border-top: 1px solid #f0f0f0; margin: 2.5rem 0; }
+
+  /* Outcome list */
+  .outcomes { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .outcomes li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; color: #333; line-height: 1.6; }
+  .outcome-icon { width: 20px; height: 20px; border-radius: 50%; background: #eaf6f0; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+  .outcome-icon svg { width: 10px; height: 10px; }
+
+  /* Note / callout */
+  .note { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 1rem 1.25rem; margin-top: 1rem; font-size: 13px; color: #666; line-height: 1.6; }
+  .note strong { color: #333; font-weight: 500; }
+
+  /* Sidebar */
+  .sidebar { position: sticky; top: 2rem; }
+  .sidebar-card { border: 1px solid #ebebeb; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .sidebar-card:first-child { background: #f8f7ff; border-color: #ece8ff; }
+  .stat-num { font-size: 32px; font-weight: 600; color: #6c3fcf; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+  .stat-label { font-size: 13px; color: #555; line-height: 1.5; }
+  .client-card { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .client-logo { width: 40px; height: 40px; border-radius: 8px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; }
+  .client-name { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+  .client-type { font-size: 12px; color: #888; }
+  .tags { display: flex; flex-direction: column; gap: 6px; }
+  .tag { font-size: 12px; color: #555; background: #f5f5f5; border-radius: 6px; padding: 6px 10px; line-height: 1.4; }
+  .sidebar-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #aaa; margin: 1.25rem 0 8px; }
+
+  /* CTA strip */
+  .cta-strip { background: #0f0f0f; color: #fff; padding: 3rem 2rem; text-align: center; }
+  .cta-strip h3 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 8px; }
+  .cta-strip p { font-size: 14px; color: #aaa; margin-bottom: 1.5rem; }
+  .cta-btn { display: inline-block; background: #fff; color: #0f0f0f; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; }
+  .cta-btn:hover { opacity: 0.9; }
+
+  /* Footer note */
+  .footer-note { max-width: 800px; margin: 0 auto; padding: 2rem; font-size: 12px; color: #aaa; line-height: 1.6; border-top: 1px solid #f0f0f0; }
+
+  @media (max-width: 640px) {
+    .content { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .hero { padding: 2.5rem 1.25rem 1.5rem; }
+    .content { padding: 0 1.25rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <svg viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="5" fill="#1a1a1a"/><path d="M6 11h10M11 6v10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    Copla
+  </div>
+  <div class="nav-links">
+    <span>Product</span>
+    <span>Solutions</span>
+    <span>Resources</span>
+    <span>Pricing</span>
+  </div>
+  <a class="nav-cta" href="#">Book a demo</a>
+</nav>
+
+<div class="breadcrumb">
+  <a href="#">Resources</a><span>›</span><a href="#">Success stories</a><span>›</span> Republic.com
+</div>
+
+<div class="hero">
+  <div class="hero-tag">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="#6c3fcf"/><path d="M5 3v2.5l1.5 1" stroke="#6c3fcf" stroke-linecap="round"/></svg>
+    Case study
+  </div>
+  <h1>How Republic.com replaced a manual, high-stress DORA reporting process with Copla Registry</h1>
+  <div class="hero-meta">
+    <div class="hero-meta-item">EU-regulated financial institution</div>
+    <div class="dot"></div>
+    <div class="hero-meta-item">DORA ICT Third-Party Register</div>
+    <div class="dot"></div>
+    <div class="hero-meta-item">Article 28 / RoI reporting</div>
+  </div>
+</div>
+
+<div class="pull-quote-section">
+  <div class="pull-quote-inner">
+    <div class="pull-bar"></div>
+    <div>
+      <p class="pull-text">"It removes the risk of losing data or the spreadsheet becoming corrupt. It is a centralised platform which ensures compliance and provides an audit trail — and it is kept up to date with changes made by the EBA."</p>
+      <p class="pull-attr">Republic.com compliance team</p>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="main-col">
+
+    <section>
+      <p class="section-label">The challenge</p>
+      <h2>Manual, unorganised, and stressful at submission time</h2>
+      <p>Before Copla Registry, Republic's DORA ICT third-party reporting process had no central register. Data was spread across spreadsheets, with no enforced structure and no reliable way to track changes as providers and contracts evolved throughout the year.</p>
+      <p style="margin-top: 10px;">Submission periods were stressful. Errors surfaced late, reconciliation took significant time, and the team had no clear audit trail to fall back on if questions arose during regulatory review.</p>
+    </section>
+
+    <hr class="divider">
+
+    <section>
+      <p class="section-label">What changed</p>
+      <h2>A single place for everything, in the format regulators need</h2>
+      <ul class="outcomes">
+        <li>
+          <span class="outcome-icon"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.2,7.5 8.5,2.5" stroke="#0d7a50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>All provider and contract data now lives in one structured system. The team described the ability to download directly in the format required by their regulator as "a gamechanger."</span>
+        </li>
+        <li>
+          <span class="outcome-icon"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.2,7.5 8.5,2.5" stroke="#0d7a50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>The tool is easy to use from day one. "It was very easy to use and user friendly" — no lengthy onboarding or complex configuration required.</span>
+        </li>
+        <li>
+          <span class="outcome-icon"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.2,7.5 8.5,2.5" stroke="#0d7a50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>When a field auto-population issue was identified — certain fields filling as "Not applicable" when they should have been left blank — the Copla team resolved it quickly and without friction.</span>
+        </li>
+        <li>
+          <span class="outcome-icon"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.2,7.5 8.5,2.5" stroke="#0d7a50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>Support throughout was described as "so easy to deal with, extremely helpful and very responsive." The team could not fault the experience.</span>
+        </li>
+      </ul>
+      <div class="note">
+        <strong>On the xBRL-CSV export:</strong> Republic attempted to use the import feature with data from a prior-year submission. The original file format was incorrect, which prevented a clean import — an issue originating outside the tool. The Copla team supported them through it.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <section>
+      <p class="section-label">Looking ahead</p>
+      <h2>Confident year-round, with room to grow</h2>
+      <p>Republic is fully confident in their ability to keep providers and contracts current as things change throughout the year — removing one of the core pressures of ongoing DORA compliance.</p>
+      <p style="margin-top: 10px;">Looking further ahead, the team sees potential for the tool to expand into related areas — including creating and storing records tied to outsourcing functions — as their compliance operations continue to mature.</p>
+    </section>
+
+    <hr class="divider">
+
+    <section>
+      <p class="section-label">In their own words</p>
+      <h2>What they'd tell a peer still working in spreadsheets</h2>
+      <p style="font-style: italic; color: #444; font-size: 16px; line-height: 1.65; border-left: 3px solid #e0e0e0; padding-left: 1rem;">"It removes the risk of losing data or the spreadsheet becoming corrupt. It is a centralised platform which ensures compliance and provides an audit trail. It is also kept up to date with changes made by the EBA — and the gamechanging part is that it provides the formulas and format required by the specific regulator."</p>
+    </section>
+
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Confident in keeping providers and contracts current throughout the year</div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="client-card">
+        <div class="client-logo">R</div>
+        <div>
+          <div class="client-name">Republic.com</div>
+          <div class="client-type">EU-regulated financial institution</div>
+        </div>
+      </div>
+      <div class="tags">
+        <div class="tag">DORA Article 28 / ICT RoI</div>
+        <div class="tag">EBA register logic</div>
+        <div class="tag">xBRL-CSV regulator export</div>
+        <div class="tag">Full audit trail</div>
+      </div>
+    </div>
+
+    <div class="sidebar-label">Also in this series</div>
+    <div style="font-size: 13px; color: #aaa; font-style: italic;">More case studies coming soon.</div>
+  </aside>
+</div>
+
+<div class="cta-strip">
+  <h3>Managing your ICT register in spreadsheets?</h3>
+  <p>See how Copla Registry handles the structure, validation, and export — so you don't have to.</p>
+  <a class="cta-btn" href="#">Book a demo</a>
+</div>
+
+<div class="footer-note">
+  Copla does not replace regulatory judgment or supervisory interpretation. It provides a consistent reporting foundation that teams can confidently review, explain, and submit to their local regulators.
+</div>
+
+</body>
+</html>
